@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.Telepathy.ConnectionManager.bell
+Exec=@CMAKE_INSTALL_FULL_LIBEXECDIR@/telepathy-bell
+

@@ -1,0 +1,33 @@
+[ConnectionManager]
+Name=bell
+BusName=org.freedesktop.Telepathy.ConnectionManager.bell
+ObjectPath=/org/freedesktop/Telepathy/ConnectionManager/bell
+Interfaces=
+
+[Protocol ring]
+EnglishName=Ring
+param-Alias=s required
+param-hostname=s 
+default-param-hostname=bootstrap.ring.cx
+Interfaces=
+ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Contacts;org.freedesktop.Telepathy.Connection.Interface.Requests;
+RequestableChannelClasses=text;audio-call;video-call;
+VCardField=x-ring
+Icon=im-ring
+
+[text]
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Text
+org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;
+
+[audio-call]
+org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudio b=true
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
+org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudio;org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideo;org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudioName;org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideoName;org.freedesktop.Telepathy.Channel.Type.Call1.InitialTransport;org.freedesktop.Telepathy.Channel.Interface.DTMF.InitialTones;
+
+[video-call]
+org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideo b=true
+org.freedesktop.Telepathy.Channel.ChannelType s=org.freedesktop.Telepathy.Channel.Type.Call1
+org.freedesktop.Telepathy.Channel.TargetHandleType u=1
+allowed=org.freedesktop.Telepathy.Channel.TargetHandle;org.freedesktop.Telepathy.Channel.TargetID;org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudio;org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideo;org.freedesktop.Telepathy.Channel.Type.Call1.InitialAudioName;org.freedesktop.Telepathy.Channel.Type.Call1.InitialVideoName;org.freedesktop.Telepathy.Channel.Type.Call1.InitialTransport;org.freedesktop.Telepathy.Channel.Interface.DTMF.InitialTones;
