@@ -60,6 +60,8 @@ else()
       )
 endif()
 
+configure_file(bell.service.in org.freedesktop.Telepathy.ConnectionManager.bell.service)
+
 install(
     TARGETS telepathy-bell
     DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}
