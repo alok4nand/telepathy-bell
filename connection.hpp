@@ -1,4 +1,4 @@
-#ifndef BELL_CONNECTION_H
+  #ifndef BELL_CONNECTION_H
 #define BELL_CONNECTION_H
 
 #include <TelepathyQt/BaseConnection>
@@ -28,6 +28,8 @@ private:
 Tp::BaseConnectionContactsInterfacePtr mContactsInterface;
 Tp::BaseConnectionSimplePresenceInterfacePtr mSimplePresenceInterface;
 Tp::BaseConnectionContactListInterfacePtr mContactListInterface;
+Tp::BaseConnectionAliasingInterfacePtr mAliasingInterface;
+Tp::BaseConnectionAvatarsInterfacePtr mAvatarInterface;
 Tp::BaseConnectionRequestsInterfacePtr mRequestsInterface;
 
 };

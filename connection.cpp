@@ -34,6 +34,23 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mSimplePresenceInt
  mContactListInterface->setDownloadAtConnection(true);
  plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mContactListInterface));
 
+ /* Connection.Interface.Aliasing */
+mAliasingInterface = Tp::BaseConnectionAliasingInterface::create();
+//mAliasingInterface->setGetAliasesCallback(Tp::memFun(this, &Connection::getAliases));
+//mAliasingInterface->setSetAliasesCallback(Tp::memFun(this, &Connection::setAliases));
+plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAliasingInterface));
+
+/* Connection.Interface.Avatars */
+mAvatarInterface = Tp::BaseConnectionAvatarsInterface::create();
+mAvatarInterface->setAvatarDetails(Common::getAvatarSpec());
+//mAvatarInterface->setGetKnownAvatarTokensCallback(Tp::memFun(this, &Connection::getKnownAvatarTokens));
+//mAvatarInterface->setRequestAvatarsCallback(Tp::memFun(this, &Connection::requestAvatars));
+plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAvatarInterface));
+
+/* Connection.Interface.Requests */
+mRequestsInterface = Tp::BaseConnectionRequestsInterface::create(this);
+plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface));
+
 /* Set Callbacks for client */
 setConnectCallback(Tp::memFun(this, &Connection::doConnect));
 /*setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
