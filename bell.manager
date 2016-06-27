@@ -4,10 +4,10 @@ BusName=org.freedesktop.Telepathy.ConnectionManager.bell
 ObjectPath=/org/freedesktop/Telepathy/ConnectionManager/bell
 Interfaces=
 
-[Protocol ring]
+[Protocol Ring]
 EnglishName=Ring
 param-Alias=s required
-param-hostname=s 
+param-hostname=s
 default-param-hostname=bootstrap.ring.cx
 Interfaces=
 ConnectionInterfaces=org.freedesktop.Telepathy.Connection.Interface.Contacts;org.freedesktop.Telepathy.Connection.Interface.Requests;

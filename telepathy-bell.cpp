@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     Tp::enableDebug(true);
     Tp::enableWarnings(true);
 
-    Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<Protocol>(QLatin1String("ring"));
+    Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<Protocol>(QLatin1String("Ring"));
     Tp::BaseConnectionManagerPtr cm = Tp::BaseConnectionManager::create(QLatin1String("bell"));
 
     cm->addProtocol(proto);
