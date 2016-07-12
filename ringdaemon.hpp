@@ -11,8 +11,11 @@ namespace Bell{
     QDBusInterface* DBusInterface(){return mDBusInterface;};
     QDBusInterface* ConfigurationManagerInterface(){return mConfigurationManagerInterface;};
     QDBusInterface* CallManagerInterface(){return mCallManagerInterface;};
+    QDBusInterface* InstanceInterface(){return mInstanceInterface;};
+    QDBusInterface* PresenceManagerInterface(){return mPresenceManagerInterface;};
+    QDBusInterface* VideoManagerInterface(){return mVideoManagerInterface;};
   private:
-    void init();
+    void initializeInterfaces();
     uint getProcessID();
     uint activateService();
     void deactivateService();
@@ -22,6 +25,8 @@ namespace Bell{
     QDBusInterface *mConfigurationManagerInterface;
     QDBusInterface *mCallManagerInterface;
     QDBusInterface *mInstanceInterface;
+    QDBusInterface *mPresenceManagerInterface;
+    QDBusInterface *mVideoManagerInterface;
  };
 }
 

@@ -5,7 +5,7 @@ using namespace Bell;
 RingDaemon::RingDaemon()
 {
   qDebug() << Q_FUNC_INFO;
-  RingDaemon::init();
+  RingDaemon::initializeInterfaces();
 if(RingDaemon::getProcessID() == 0 ){
    mRingProcessID = RingDaemon::activateService();
 }
@@ -17,19 +17,28 @@ else{
 RingDaemon::~RingDaemon()
 {
 RingDaemon::deactivateService();
+delete(mDBusInterface);
+delete(mConfigurationManagerInterface);
+delete(mCallManagerInterface);
+delete(mInstanceInterface);
+delete(mPresenceManagerInterface);
+delete(mVideoManagerInterface);
 }
 
-void RingDaemon::init()
+void RingDaemon::initializeInterfaces()
 {
   qDebug() << Q_FUNC_INFO;
-  // Initialize Interface to DBus
   mDBusInterface = new QDBusInterface("org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus");
   // Initialize Ring Daemon's Configuration Manager Interface
-  mConfigurationManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring","cx.ring.Ring.ConfigurationManager");
+  mConfigurationManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager");
   // Initialize Ring Daemon's Call Manager Interface
-  mCallManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring","cx.ring.Ring.CallManager");
+  mCallManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager");
   // Initialize Ring Daemon's Instance Interface
-  mInstanceInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring","cx.ring.Ring.Instance");
+  mInstanceInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/Instance","cx.ring.Ring.Instance");
+  // Initialize Ring Daemon's Presence Manager Interface
+  mPresenceManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/PresenceManager","cx.ring.Ring.PresenceManager");
+  // Initialize Ring Daemon's Video Manager Interface
+  mVideoManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/VideoManager","cx.ring.Ring.VideoManager")
 }
 
 uint RingDaemon::getProcessID(){
