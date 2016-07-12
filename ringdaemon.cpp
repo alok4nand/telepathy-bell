@@ -5,13 +5,14 @@ using namespace Bell;
 RingDaemon::RingDaemon()
 {
   qDebug() << Q_FUNC_INFO;
+  mDBusInterface = new QDBusInterface("org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus");
+  if(RingDaemon::getProcessID() == 0 ){
+    mRingProcessID = RingDaemon::activateService();
+  }
+  else{
+    mRingProcessID = RingDaemon::getProcessID();
+  }
   RingDaemon::initializeInterfaces();
-if(RingDaemon::getProcessID() == 0 ){
-   mRingProcessID = RingDaemon::activateService();
-}
-else{
-  mRingProcessID = RingDaemon::getProcessID();
-}
 }
 
 RingDaemon::~RingDaemon()
@@ -28,7 +29,6 @@ delete(mVideoManagerInterface);
 void RingDaemon::initializeInterfaces()
 {
   qDebug() << Q_FUNC_INFO;
-  mDBusInterface = new QDBusInterface("org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus");
   // Initialize Ring Daemon's Configuration Manager Interface
   mConfigurationManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager");
   // Initialize Ring Daemon's Call Manager Interface
