@@ -16,11 +16,11 @@ namespace Bell{
     QDBusInterface* VideoManagerInterface(){return mVideoManagerInterface;};
   private:
     void initializeInterfaces();
-    uint getProcessID();
-    uint activateService();
+    int getProcessID();
+    int activateService();
     void deactivateService();
   private:
-    uint mRingProcessID = 0;
+    int mRingProcessID = 0;
     QDBusInterface *mDBusInterface;
     QDBusInterface *mConfigurationManagerInterface;
     QDBusInterface *mCallManagerInterface;

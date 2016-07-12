@@ -41,7 +41,7 @@ void RingDaemon::initializeInterfaces()
   mVideoManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/VideoManager","cx.ring.Ring.VideoManager")
 }
 
-uint RingDaemon::getProcessID(){
+int RingDaemon::getProcessID(){
   qDebug() << Q_FUNC_INFO;
   QDBusReply<uint> reply = mDBusInterface->call("GetConnectionUnixProcessID","cx.ring.Ring");
   if(reply.isValid()){
@@ -51,7 +51,7 @@ uint RingDaemon::getProcessID(){
   return 0;
 }
 
-uint RingDaemon::activateService()
+int RingDaemon::activateService()
 {
   qDebug() << Q_FUNC_INFO;
   uint arg = 0;
