@@ -38,7 +38,7 @@ void RingDaemon::initializeInterfaces()
   // Initialize Ring Daemon's Presence Manager Interface
   mPresenceManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/PresenceManager","cx.ring.Ring.PresenceManager");
   // Initialize Ring Daemon's Video Manager Interface
-  mVideoManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/VideoManager","cx.ring.Ring.VideoManager")
+  mVideoManagerInterface = new QDBusInterface("cx.ring.Ring","/cx/ring/Ring/VideoManager","cx.ring.Ring.VideoManager");
 }
 
 int RingDaemon::getProcessID(){
