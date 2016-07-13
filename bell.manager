@@ -6,7 +6,10 @@ Interfaces=
 
 [Protocol Ring]
 EnglishName=Ring
-param-Alias=s required
+param-Username=s required
+param-RingID=s required
+default-param-RingID="Enter \"ring:\" to create a new Ring account"
+param-AccountID=s
 param-hostname=s
 default-param-hostname=bootstrap.ring.cx
 Interfaces=

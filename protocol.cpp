@@ -17,8 +17,10 @@ Protocol::Protocol(const QDBusConnection &dbusConnection, const QString &name)
 : Tp::BaseProtocol(dbusConnection, name)
 {
   setParameters(Tp::ProtocolParameterList()
-   << Tp::ProtocolParameter(QLatin1String("Alias"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired)
-   << Tp::ProtocolParameter(QLatin1String("Hostname"), QDBusSignature(QLatin1String("s")), 0, "bootstrap.ring.cx")
+   << Tp::ProtocolParameter(QLatin1String("Username"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired)
+   << Tp::ProtocolParameter(QLatin1String("RingID"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired | Tp::ConnMgrParamFlagHasDefault, "Enter \"ring:\" to create a new Ring account")
+   << Tp::ProtocolParameter(QLatin1String("AccountID"), QDBusSignature(QLatin1String("s")),0)
+   << Tp::ProtocolParameter(QLatin1String("Hostname"), QDBusSignature(QLatin1String("s")),Tp::ConnMgrParamFlagHasDefault, "bootstrap.ring.cx")
  );
 
   setRequestableChannelClasses(Tp::RequestableChannelClassSpecList()
