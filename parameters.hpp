@@ -17,12 +17,18 @@ static Tp::ProtocolParameterList getParameterList();
 
 protected:
 const char* getString(const char* parameter);
-const std::string getAlias(){ return mAlias; }
+const std::string getUsername(){ return mUsername; }
+const std::string getAccount() {return mAccount;}
+const std::string getRingID() {return mRingID;}
+const std::string getAccountID() {return mAccountID;}
 const std::string getHostname(){ return mHostname;}
 
 private:
   const QVariantMap mParameters;
-  std::string mAlias;
+  std::string mUsername;
+  std::string mAccount;
+  std::string mRingID;
+  std::string mAccountID;
   std::string mHostname;
 };
 }

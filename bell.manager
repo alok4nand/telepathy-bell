@@ -7,6 +7,7 @@ Interfaces=
 [Protocol Ring]
 EnglishName=Ring
 param-Username=s required
+param-account=s required
 param-RingID=s required
 default-param-RingID="Enter \"ring:\" to create a new Ring account"
 param-AccountID=s
