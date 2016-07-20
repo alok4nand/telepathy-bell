@@ -5,6 +5,7 @@
 #include <TelepathyQt/Types>
 #include <TelepathyQt/ProtocolParameterList>
 #include <TelepathyQt/Utils>
+#include <QtDebug>
 
 #include "protocol.hpp"
 #include "connection.hpp"
@@ -16,12 +17,7 @@ using namespace Bell;
 Protocol::Protocol(const QDBusConnection &dbusConnection, const QString &name)
 : Tp::BaseProtocol(dbusConnection, name)
 {
-  setParameters(Tp::ProtocolParameterList()
-   << Tp::ProtocolParameter(QLatin1String("Username"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired)
-   << Tp::ProtocolParameter(QLatin1String("RingID"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired | Tp::ConnMgrParamFlagHasDefault, "Enter \"ring:\" to create a new Ring account")
-   << Tp::ProtocolParameter(QLatin1String("AccountID"), QDBusSignature(QLatin1String("s")),0)
-   << Tp::ProtocolParameter(QLatin1String("Hostname"), QDBusSignature(QLatin1String("s")),Tp::ConnMgrParamFlagHasDefault, "bootstrap.ring.cx")
- );
+  qDebug() << Q_FUNC_INFO;
 
   setRequestableChannelClasses(Tp::RequestableChannelClassSpecList()
   << Tp::RequestableChannelClassSpec::textChat()
@@ -29,12 +25,13 @@ Protocol::Protocol(const QDBusConnection &dbusConnection, const QString &name)
   << Tp::RequestableChannelClassSpec::videoCall());
 
   setEnglishName(QLatin1String("Ring"));
-  setIconName(QLatin1String("im-ring"));
+  setIconName(QLatin1String("im-Ring"));
   setVCardField(QLatin1String("x-ring"));
 
   setCreateConnectionCallback(Tp::memFun(this, &Protocol::createConnection));
   setIdentifyAccountCallback(Tp::memFun(this, &Protocol::identifyAccount));
   setNormalizeContactCallback(Tp::memFun(this, &Protocol::normalizeContact));
+  setParameters(Parameters::getParameterList());
 
   mAddressingInterface = Tp::BaseProtocolAddressingInterface::create();
   mAddressingInterface->setAddressableVCardFields(QStringList() << QLatin1String("x-ring"));
@@ -52,8 +49,19 @@ Protocol::~Protocol()
 
 Tp::BaseConnectionPtr Protocol::createConnection(const QVariantMap &parameters, Tp::DBusError *error)
 {
-   Tp::BaseConnectionPtr newConnection = Tp::BaseConnection::create<Bell::Connection>(QLatin1String("bell"), name(), parameters);
-   return newConnection;
+  qDebug() << Q_FUNC_INFO << parameters;
+  Q_UNUSED(error);
+  // Make a Parameters object.
+  //   if (parameters[QLatin1String("RingID")].toString() == "ring:")
+  // {
+  //   qDebug() << "Creating a New Ring Account";
+  //   mParameters["Username"] = "alok";
+  //   mParameters["RingID"] = "ring:0cc189f5395a10496130fe84a0c65932418dcd4e";
+  // }
+  // qDebug() << "Adding account ID information";
+  // mParameters["AccountID"] = "173e9dc01df7ced4";
+  Tp::BaseConnectionPtr newConnection = Tp::BaseConnection::create<Bell::Connection>(QLatin1String("bell"), name(), parameters);
+  return newConnection;
 }
 
 QString Protocol::identifyAccount(const QVariantMap &parameters, Tp::DBusError *error)
