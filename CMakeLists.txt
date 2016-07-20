@@ -3,7 +3,7 @@ project(telepathy-bell)
 cmake_minimum_required(VERSION 2.8)
 
 include_directories(${CMAKE_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -ggdb -Wall")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -27,6 +27,7 @@ include_directories(${CMAKE_SOURCE_DIR} ${ring_INCLUDE_DIRS})
 set(bell_SOURCES
     telepathy-bell.cpp
     common.cpp
+    parameters.cpp
     connection.cpp
     protocol.cpp
     ringdaemon.cpp
