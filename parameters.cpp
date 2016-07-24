@@ -4,6 +4,7 @@ using namespace Bell;
 
 Tp::ProtocolParameterList Parameters::getParameterList()
 {
+  qDebug() << Q_FUNC_INFO;
    Tp::ProtocolParameterList params;
 
    params << Tp::ProtocolParameter(QLatin1String("Username"), QDBusSignature(QLatin1String("s")), Tp::ConnMgrParamFlagRequired)
@@ -14,21 +15,12 @@ Tp::ProtocolParameterList Parameters::getParameterList()
    return params;
 }
 
-using namespace Bell;
-
-Parameters::Parameters(const QVariantMap& parameters)
-: mParameters(parameters)
+Parameters::Parameters(const QVariantMap& parameters): mParameters(parameters)
 {
-  mUsername = getString("Username");
-  mUsername = getString("Account");
-  mUsername = getString("RingID");
-  mUsername = getString("AccountID");
-  mHostname = getString("Hostname");
-}
-
-
-const char*
-Parameters::getString(const char* parameter)
-{
-   return (const char *)mParameters.value(QLatin1String(parameter)).toString().toUtf8().constData();
+  qDebug() << Q_FUNC_INFO;
+  mUsername = parameters[QLatin1String("Username")].toString();
+  mAccount = parameters[QLatin1String("Account")].toString();
+  mRingID = parameters[QLatin1String("RingID")].toString();
+  mAccountID = parameters[QLatin1String("AccountID")].toString();
+  mHostname = parameters[QLatin1String("Hostname")].toString();
 }
