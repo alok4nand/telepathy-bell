@@ -78,3 +78,8 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/org.freedesktop.Telepathy.ConnectionManager.bell.service
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dbus-1/services
 )
+
+install(
+    FILES im-Ring.svg
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps
+)
