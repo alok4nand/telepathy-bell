@@ -19,8 +19,10 @@ public:
 // Store the parameters from the account settings panel.
 Parameters(const QVariantMap& parameters);
 void createNewRingAccount();
+void updateParameters(QString identifyAccount);
 // Get the list of parameters that should appear in the account settings panel.
 static Tp::ProtocolParameterList getParameterList();
+void setRingIDviaAccountID();
 QVariantMap value();
 private:
   RingDaemon mRingDaemonInterface;
