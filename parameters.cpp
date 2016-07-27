@@ -81,6 +81,37 @@ void Parameters::setRingIDviaAccountID()
   qDebug() << "Value of RingID is : " << mRingID;
 }
 
+void Parameters::setAccountIDviaRingID()
+{
+  qDebug() << Q_FUNC_INFO;
+  QDBusReply<QStringList> reply = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountList");
+  if(!reply.isValid())
+  {
+    qDebug() << "Error in getting Account List";
+    // QDBusError mError = reply.error();
+    // qDebug() << mError.message();
+    // qDebug() << mError.name();
+  }
+  QString str;
+  qDBusRegisterMetaType<MapStringString>();
+  foreach(str,reply.value())
+  {
+  QDBusReply<MapStringString> mAccountDetails = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountDetails",str);
+  if(!mAccountDetails.isValid())
+    {
+    qDebug() << "Error in getting Account details";
+    // QDBusError mError = reply.error();
+    // qDebug() << mError.message();
+    // qDebug() << mError.name();
+    }
+    MapStringString details = mAccountDetails.value();
+    if(mUsername == details["Account.alias"] && mRingID == details["Account.username"]){
+      mAccountID = str;
+      qDebug() << mAccountID;
+    }
+  }
+}
+
 QVariantMap Parameters::value()
 {
   QVariantMap modifiedParameters;
@@ -88,26 +119,31 @@ QVariantMap Parameters::value()
   modifiedParameters[QLatin1String("account")] = mAccount;
   modifiedParameters[QLatin1String("RingID")] = mRingID;
   modifiedParameters[QLatin1String("AccountID")] = mAccountID;
-  // modifiedParameters[QLatin1String("Hostname")] = mHostname;
+  modifiedParameters[QLatin1String("Hostname")] = mHostname;
   // for(QVariantMap::const_iterator iter = modifiedParameters.begin(); iter != modifiedParameters.end(); ++iter) {
   //      qDebug() << iter.key() << iter.value();
   //     }
   return modifiedParameters;
 }
 
-void Parameters::updateParameters(QString identifyAccount)
-{
+void Parameters::updateParameters(QString identifyAccount){
   qDebug() << Q_FUNC_INFO << identifyAccount;
   QString objPath = "/org/freedesktop/Telepathy/Account/bell/Ring/" + identifyAccount + "0";
   qDebug() << objPath;
   QDBusInterface mAccountManager("org.freedesktop.Telepathy.AccountManager",objPath,"org.freedesktop.Telepathy.Account");
+  QVariantMap set;
+  set[QLatin1String("RingID")] = mRingID;
+  set[QLatin1String("AccountID")] = mAccountID;
   QStringList unset;
-  QDBusReply<QStringList> reconnect_required = mAccountManager.call("UpdateParameters",Parameters::value(),unset);
+  QDBusReply<QStringList> reconnect_required = mAccountManager.call("UpdateParameters",set,unset);
   if(!reconnect_required.isValid())
   {
     qDebug() << "Error in Updating Account Parameters";
     QDBusError mError = reconnect_required.error();
     qDebug() << mError.message();
     qDebug() << mError.name();
+  }
+  else{
+    qDebug() << "Updates Account Parameters Sucessfully , reconnect required ?:";
   }
 }
