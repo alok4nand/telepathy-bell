@@ -20,6 +20,7 @@ endif()
 
 # Add Ring specific deps here.
 find_package(Ring REQUIRED)
+find_program(UPDATE_ICON gtk-update-icon-cache)
 
 include(GNUInstallDirs)
 include_directories(${CMAKE_SOURCE_DIR} ${ring_INCLUDE_DIRS})
@@ -83,3 +84,8 @@ install(
     FILES im-Ring.svg
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps
 )
+if(UPDATE_ICON)
+install (
+    CODE "execute_process (COMMAND ${UPDATE_ICON} -t ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor )"
+)
+endif()
