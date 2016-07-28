@@ -51,16 +51,29 @@ Tp::BaseConnectionPtr Protocol::createConnection(const QVariantMap &parameters, 
 {
   qDebug() << Q_FUNC_INFO << parameters;
   Q_UNUSED(error);
-  // Make a Parameters object.
-  //   if (parameters[QLatin1String("RingID")].toString() == "ring:")
-  // {
-  //   qDebug() << "Creating a New Ring Account";
-  //   mParameters["Username"] = "alok";
-  //   mParameters["RingID"] = "ring:0cc189f5395a10496130fe84a0c65932418dcd4e";
-  // }
-  // qDebug() << "Adding account ID information";
-  // mParameters["AccountID"] = "173e9dc01df7ced4";
-  Tp::BaseConnectionPtr newConnection = Tp::BaseConnection::create<Bell::Connection>(QLatin1String("bell"), name(), parameters);
+  QDBusReply<void> reply = QDBusConnection::sessionBus().interface()->startService("cx.ring.Ring");
+  if(!reply.isValid()){
+    qDebug() << "Error in starting Ring Daemon Service";
+    // QDBusError mError = reply.error();
+    // qDebug() << mError.message();
+    // qDebug() << mError.name();
+  }
+  Parameters mParameters(parameters);
+  QString iName = Protocol::identifyAccount(parameters,error);
+   if (parameters[QLatin1String("RingID")].toString() == "ring:")
+   {
+      qDebug() << "Creating a New Ring Account";
+      mParameters.setRingIDandAccountID();
+      mParameters.updateParameters(iName);
+   }
+   if (!parameters.contains("AccountID"))
+   {
+      qDebug() << "Adding account ID information";
+      mParameters.setAccountIDviaRingID();
+      mParameters.updateParameters(iName);
+   }
+
+  Tp::BaseConnectionPtr newConnection = Tp::BaseConnection::create<Bell::Connection>(QLatin1String("bell"), name(), mParameters.value());
   return newConnection;
 }
 
