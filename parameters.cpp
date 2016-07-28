@@ -19,7 +19,8 @@ Tp::ProtocolParameterList Parameters::getParameterList()
    return params;
 }
 
-Parameters::Parameters(const QVariantMap& parameters): mParameters(parameters)
+Parameters::Parameters(const QVariantMap& parameters): mParameters(parameters),
+mConfigurationManagerInterface("cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager")
 {
   qDebug() << Q_FUNC_INFO;
   mUsername = parameters[QLatin1String("Username")].toString();
@@ -29,12 +30,18 @@ Parameters::Parameters(const QVariantMap& parameters): mParameters(parameters)
   mHostname = parameters[QLatin1String("Hostname")].toString();
 }
 
-void Parameters::createNewRingAccount()
+void Parameters::setRingIDandAccountID()
 {
   qDebug() << Q_FUNC_INFO;
+  Parameters::createNewRingAccount();
+  Parameters::setRingIDviaAccountID();
+}
+
+void Parameters::createNewRingAccount()
+{
 
   qDBusRegisterMetaType<MapStringString>();
-  QDBusReply<MapStringString> reply = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountTemplate","RING");
+  QDBusReply<MapStringString> reply = mConfigurationManagerInterface.call("getAccountTemplate","RING");
   if(!reply.isValid())
   {
   qDebug() << "Error in getting Account Template";
@@ -56,7 +63,7 @@ void Parameters::createNewRingAccount()
   QList<QVariant> argumentList;
   argumentList << QVariant::fromValue(mAccountDetails);
 
- QDBusPendingCall mPendingCallReply = mRingDaemonInterface.ConfigurationManagerInterface()->asyncCallWithArgumentList("addAccount",argumentList);
+ QDBusPendingCall mPendingCallReply = mConfigurationManagerInterface.asyncCallWithArgumentList("addAccount",argumentList);
  QDBusPendingReply<QString> mPendingReply(mPendingCallReply);
  if(mPendingReply.isError()){
    qDebug() << "Error in getting new Account ID ";
@@ -68,7 +75,7 @@ void Parameters::setRingIDviaAccountID()
 {
   qDebug() << Q_FUNC_INFO;
   qDBusRegisterMetaType<MapStringString>();
-  QDBusReply<MapStringString> reply = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountDetails",mAccountID);
+  QDBusReply<MapStringString> reply = mConfigurationManagerInterface.call("getAccountDetails",mAccountID);
   if(!reply.isValid())
   {
     qDebug() << "Error in getting Account details";
@@ -84,7 +91,7 @@ void Parameters::setRingIDviaAccountID()
 void Parameters::setAccountIDviaRingID()
 {
   qDebug() << Q_FUNC_INFO;
-  QDBusReply<QStringList> reply = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountList");
+  QDBusReply<QStringList> reply = mConfigurationManagerInterface.call("getAccountList");
   if(!reply.isValid())
   {
     qDebug() << "Error in getting Account List";
@@ -96,7 +103,7 @@ void Parameters::setAccountIDviaRingID()
   qDBusRegisterMetaType<MapStringString>();
   foreach(str,reply.value())
   {
-  QDBusReply<MapStringString> mAccountDetails = mRingDaemonInterface.ConfigurationManagerInterface()->call("getAccountDetails",str);
+  QDBusReply<MapStringString> mAccountDetails = mConfigurationManagerInterface.call("getAccountDetails",str);
   if(!mAccountDetails.isValid())
     {
     qDebug() << "Error in getting Account details";
@@ -112,7 +119,7 @@ void Parameters::setAccountIDviaRingID()
   }
 }
 
-QVariantMap Parameters::value()
+const QVariantMap Parameters::value()
 {
   QVariantMap modifiedParameters;
   modifiedParameters[QLatin1String("Username")] = mUsername;
@@ -128,6 +135,7 @@ QVariantMap Parameters::value()
 
 void Parameters::updateParameters(QString identifyAccount){
   qDebug() << Q_FUNC_INFO << identifyAccount;
+  // FIXME better account path recognition.
   QString objPath = "/org/freedesktop/Telepathy/Account/bell/Ring/" + identifyAccount + "0";
   qDebug() << objPath;
   QDBusInterface mAccountManager("org.freedesktop.Telepathy.AccountManager",objPath,"org.freedesktop.Telepathy.Account");

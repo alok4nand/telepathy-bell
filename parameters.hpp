@@ -17,23 +17,24 @@ namespace Bell{
 class Parameters{
 public:
 // Store the parameters from the account settings panel.
-Parameters(const QVariantMap& parameters);
-void createNewRingAccount();
-void updateParameters(QString identifyAccount);
-// Get the list of parameters that should appear in the account settings panel.
 static Tp::ProtocolParameterList getParameterList();
-void setRingIDviaAccountID();
+Parameters(const QVariantMap& parameters);
+const QVariantMap value();
 void setAccountIDviaRingID();
+void setRingIDandAccountID();
+void updateParameters(QString identifyAccount);
 
-QVariantMap value();
 private:
-  RingDaemon mRingDaemonInterface;
+  void createNewRingAccount();
+  void setRingIDviaAccountID();
+private:
   const QVariantMap mParameters;
   QString mUsername;
   QString mAccount;
   QString mRingID;
   QString mAccountID;
   QString mHostname;
+  QDBusInterface mConfigurationManagerInterface;
 };
 }
 
