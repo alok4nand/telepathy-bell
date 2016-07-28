@@ -1,9 +1,9 @@
-  #ifndef BELL_CONNECTION_H
+#ifndef BELL_CONNECTION_H
 #define BELL_CONNECTION_H
 
 #include <TelepathyQt/BaseConnection>
 #include <TelepathyQt/BaseChannel>
-
+#include <QtDBus/QtDBus>
 /*This models a connection to a single user account.*/
 
 namespace Bell {
@@ -22,16 +22,20 @@ uint setPresence(const QString &status, const QString &message, Tp::DBusError *e
 
 private slots:
 void doConnect(Tp::DBusError *error);
+void onRegistrationStateChanged(QString accountID, QString state);
 void doDisconnect();
 
 private:
+QString mAccountID;
 Tp::BaseConnectionContactsInterfacePtr mContactsInterface;
 Tp::BaseConnectionSimplePresenceInterfacePtr mSimplePresenceInterface;
 Tp::BaseConnectionContactListInterfacePtr mContactListInterface;
 Tp::BaseConnectionAliasingInterfacePtr mAliasingInterface;
 Tp::BaseConnectionAvatarsInterfacePtr mAvatarInterface;
 Tp::BaseConnectionRequestsInterfacePtr mRequestsInterface;
-
+QDBusInterface mConfigurationManagerInterface;
+QDBusInterface mCallManagerInterface;
+QDBusInterface mInstanceInterface;
 };
 
 }
