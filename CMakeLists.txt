@@ -32,6 +32,7 @@ set(bell_SOURCES
     connection.cpp
     protocol.cpp
     ringdaemon.cpp
+    ringcallchannel.cpp
 )
 
 add_executable(telepathy-bell ${bell_SOURCES})
