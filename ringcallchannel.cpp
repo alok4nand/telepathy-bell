@@ -10,25 +10,25 @@ RingCallChannel::RingCallChannel(bool incoming, Connection* connection, QString 
   mPeer(peer),
   mTargetHandle(targetHandle)
 {
-  // mBaseChannel = Tp::BaseChannel::create(mConnection, TP_QT_IFACE_CHANNEL_TYPE_CALL, Tp::HandleTypeContact, targetHandle);
-  // mBaseChannel->setTargetID(peer);
-  //
-  // Tp::BaseChannelCallTypePtr callType = Tp::BaseChannelCallType::create(mBaseChannel.data(),
-  //                                                                        true,
-  //                                                                        Tp::StreamTransportTypeUnknown,
-  //                                                                        true,
-  //                                                                        false, "audio","");
-  // mBaseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(callType));
-  //
-  // mHoldIface = Tp::BaseChannelHoldInterface::create();
-  // mHoldIface->setSetHoldStateCallback(Tp::memFun(this,&SipCallChannel::onHoldStateChanged));
-  //
-  // mMuteIface = Tp::BaseCallMuteInterface::create();
-  // mMuteIface->setSetMuteStateCallback(Tp::memFun(this,&SipCallChannel::onMuteStateChanged));
-  //
-  // mCallChannel = Tp::BaseChannelCallTypePtr::dynamicCast(mBaseChannel->interface(TP_QT_IFACE_CHANNEL_TYPE_CALL));
-  // mCallChannel->setHangupCallback(Tp::memFun(this,&SipCallChannel::onHangup));
-  // mCallChannel->setAcceptCallback(Tp::memFun(this,&SipCallChannel::onAccept));
+  mBaseChannel = Tp::BaseChannel::create(mConnection, TP_QT_IFACE_CHANNEL_TYPE_CALL, Tp::HandleTypeContact, targetHandle);
+  mBaseChannel->setTargetID(peer);
+
+  Tp::BaseChannelCallTypePtr callType = Tp::BaseChannelCallType::create(mBaseChannel.data(),
+                                                                         true,
+                                                                         Tp::StreamTransportTypeUnknown,
+                                                                         true,
+                                                                         false, "audio","");
+  mBaseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(callType));
+
+  mHoldIface = Tp::BaseChannelHoldInterface::create();
+  mHoldIface->setSetHoldStateCallback(Tp::memFun(this,&RingCallChannel::onHoldStateChanged));
+
+  mMuteIface = Tp::BaseCallMuteInterface::create();
+  mMuteIface->setSetMuteStateCallback(Tp::memFun(this,&RingCallChannel::onMuteStateChanged));
+
+  mCallChannel = Tp::BaseChannelCallTypePtr::dynamicCast(mBaseChannel->interface(TP_QT_IFACE_CHANNEL_TYPE_CALL));
+  mCallChannel->setHangupCallback(Tp::memFun(this,&RingCallChannel::onHangup));
+  mCallChannel->setAcceptCallback(Tp::memFun(this,&RingCallChannel::onAccept));
 
   connect(this, SIGNAL(hangupComplete(bool)), this, SLOT(onHangupComplete(bool)));
   connect(this, SIGNAL(answerComplete(bool)), this, SLOT(onAnswerComplete(bool)));
