@@ -20,6 +20,7 @@ mAccountID = parameters[QLatin1String("AccountID")].toString();
 /* Connection Interface Setup */
 /* Connection.Interface.Contacts */
 mContactsInterface = Tp::BaseConnectionContactsInterface::create();
+mContactsInterface->setGetContactAttributesCallback(Tp::memFun(this, &Connection::getContactAttributes));
 mContactsInterface->setContactAttributeInterfaces(QStringList()
                                                 << TP_QT_IFACE_CONNECTION
                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
@@ -88,6 +89,11 @@ void Connection::onRegistrationStateChanged(QString accountID, QString state)
   qDebug() << Q_FUNC_INFO << accountID << state ;
   if (accountID == mAccountID && state == "REGISTERED"){
     setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
+    Tp::SimpleContactPresences presences;
+    mSelfPresence.type = Tp::ConnectionPresenceTypeAvailable;
+    mSelfPresence.status = QLatin1String("available");
+    presences[selfHandle()] = mSelfPresence;
+    mSimplePresenceInterface->setPresences(presences);
   }
   if  (accountID == mAccountID && state == "TRYING"){
    setStatus(Tp::ConnectionStatusConnecting, Tp::ConnectionStatusReasonRequested);
@@ -110,14 +116,49 @@ uint Connection::setPresence(const QString &status, const QString &message, Tp::
   // TODO
   return selfHandle();
 }
-/*
-QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error)
-{
 
+QStringList Connection::inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO;
+   if(handleType != Tp::HandleTypeContact) {
+      error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Unsupported handle type"));
+      return QStringList();
+   }
+
+   QStringList result;
+
+   foreach (uint handle, handles) {
+      if(!mHandles.contains(handle)) {
+         return QStringList();
+      }
+
+      result.append(mHandles.value(handle));
+   }
+   return result;
 }
 
 Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error)
 {
 
 }
-*/
+
+Tp::ContactAttributesMap
+Connection::getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error)
+{
+    qDebug() << Q_FUNC_INFO << handles << ifaces;
+    Tp::ContactAttributesMap attributesMap;
+    Q_FOREACH(uint handle, handles) {
+        QVariantMap attributes;
+        QStringList inspectedHandles = inspectHandles(Tp::HandleTypeContact, Tp::UIntList() << handle, error);
+        if (inspectedHandles.size() > 0) {
+            attributes[TP_QT_IFACE_CONNECTION+"/contact-id"] = inspectedHandles.at(0);
+        } else {
+            continue;
+        }
+        if (ifaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE)) {
+            attributes[TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE+"/presence"] = QVariant::fromValue(mSelfPresence);
+        }
+        attributesMap[handle] = attributes;
+    }
+    return attributesMap;
+}

@@ -4,6 +4,7 @@
 #include <TelepathyQt/BaseConnection>
 #include <TelepathyQt/BaseChannel>
 #include <QtDBus/QtDBus>
+#include <QMap>
 /*This models a connection to a single user account.*/
 
 namespace Bell {
@@ -17,8 +18,9 @@ public:
 
 private:
 uint setPresence(const QString &status, const QString &message, Tp::DBusError *error);
-//QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
+QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
 //Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error);
+Tp::ContactAttributesMap getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error);
 
 private slots:
 void doConnect(Tp::DBusError *error);
@@ -36,6 +38,8 @@ Tp::BaseConnectionRequestsInterfacePtr mRequestsInterface;
 QDBusInterface mConfigurationManagerInterface;
 QDBusInterface mCallManagerInterface;
 QDBusInterface mInstanceInterface;
+Tp::SimplePresence mSelfPresence;
+QMap<uint,QString> mHandles;
 };
 
 }
