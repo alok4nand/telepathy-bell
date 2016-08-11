@@ -57,17 +57,40 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAvatarInterface))
 
 /* Connection.Interface.Requests */
 mRequestsInterface = Tp::BaseConnectionRequestsInterface::create(this);
+
+Tp::RequestableChannelClass text;
+text.fixedProperties[TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")] = TP_QT_IFACE_CHANNEL_TYPE_TEXT;
+text.fixedProperties[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")]  = Tp::HandleTypeContact;
+text.allowedProperties.append(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle"));
+text.allowedProperties.append(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetID"));
+
+Tp::RequestableChannelClass call;
+call.fixedProperties[TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")] = TP_QT_IFACE_CHANNEL_TYPE_CALL;
+call.fixedProperties[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")]  = Tp::HandleTypeContact;
+call.fixedProperties[TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialAudio"]  = true;
+//call.fixedProperties[TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialVideo"]  = false;
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle"));
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetID"));
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialAudio");
+//call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialVideo");
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialAudioName");
+//call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialVideoName");
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".InitialTransport");
+call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".HardwareStreaming");
+//call.allowedProperties.append(TP_QT_IFACE_CHANNEL_INTERFACE_CONFERENCE + QLatin1String(".InitialChannels"));
+
+mRequestsInterface->requestableChannelClasses << text << call;
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface));
 
 /* Set Callbacks for client */
 setConnectCallback(Tp::memFun(this, &Connection::doConnect));
-/*setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
+setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
 setRequestHandlesCallback(Tp::memFun(this, &Connection::requestHandles));
-*/
+connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
+
 mConfigurationManagerInterface.connection().connect(
   "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
   "registrationStateChanged",this,SLOT(onRegistrationStateChanged(QString, QString)));
-connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
 }
 
 Connection::~Connection()
@@ -98,16 +121,13 @@ void Connection::onRegistrationStateChanged(QString accountID, QString state)
   if  (accountID == mAccountID && state == "TRYING"){
    setStatus(Tp::ConnectionStatusConnecting, Tp::ConnectionStatusReasonRequested);
   }
-  if (accountID == mAccountID && state == "UNREGISTERED"){
-    setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
-    emit(disconnected());
-  }
 }
 
 void Connection::doDisconnect()
 {
   qDebug() << Q_FUNC_INFO << mAccountID;
   mConfigurationManagerInterface.call("setAccountActive",mAccountID,false);
+  setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
 }
 
 uint Connection::setPresence(const QString &status, const QString &message, Tp::DBusError *error)
@@ -115,6 +135,30 @@ uint Connection::setPresence(const QString &status, const QString &message, Tp::
   qDebug() << Q_FUNC_INFO << status << message << error;
   // TODO
   return selfHandle();
+}
+
+uint Connection::ensureHandle(const QString &identifier)
+{
+  qDebug() << Q_FUNC_INFO;
+
+}
+
+Tp::UIntList Connection::requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO;
+  Tp::UIntList result;
+
+  if(handleType != Tp::HandleTypeContact) {
+     error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Unknown Handle type"));
+     return result;
+  }
+
+  Q_FOREACH(const QString &identifier,  identifiers) {
+     ensureHandle(identifier);
+     result.append(mIdentifiers[identifier]);
+  }
+
+  return result;
 }
 
 QStringList Connection::inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error)
@@ -137,13 +181,7 @@ QStringList Connection::inspectHandles(uint handleType, const Tp::UIntList &hand
    return result;
 }
 
-Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error)
-{
-
-}
-
-Tp::ContactAttributesMap
-Connection::getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error)
+Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error)
 {
     qDebug() << Q_FUNC_INFO << handles << ifaces;
     Tp::ContactAttributesMap attributesMap;

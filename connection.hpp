@@ -19,8 +19,9 @@ public:
 private:
 uint setPresence(const QString &status, const QString &message, Tp::DBusError *error);
 QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
-//Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error);
+Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error);
 Tp::ContactAttributesMap getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error);
+uint ensureHandle(const QString& identifier);
 
 private slots:
 void doConnect(Tp::DBusError *error);
@@ -40,6 +41,7 @@ QDBusInterface mCallManagerInterface;
 QDBusInterface mInstanceInterface;
 Tp::SimplePresence mSelfPresence;
 QMap<uint,QString> mHandles;
+QMap<QString, uint> mIdentifiers;
 };
 
 }
