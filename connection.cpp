@@ -44,15 +44,15 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mSimplePresenceInt
 
  /* Connection.Interface.Aliasing */
 mAliasingInterface = Tp::BaseConnectionAliasingInterface::create();
-//mAliasingInterface->setGetAliasesCallback(Tp::memFun(this, &Connection::getAliases));
-//mAliasingInterface->setSetAliasesCallback(Tp::memFun(this, &Connection::setAliases));
+// mAliasingInterface->setGetAliasesCallback(Tp::memFun(this, &Connection::getAliases));
+// mAliasingInterface->setSetAliasesCallback(Tp::memFun(this, &Connection::setAliases));
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAliasingInterface));
 
 /* Connection.Interface.Avatars */
 mAvatarInterface = Tp::BaseConnectionAvatarsInterface::create();
 mAvatarInterface->setAvatarDetails(Common::getAvatarSpec());
-//mAvatarInterface->setGetKnownAvatarTokensCallback(Tp::memFun(this, &Connection::getKnownAvatarTokens));
-//mAvatarInterface->setRequestAvatarsCallback(Tp::memFun(this, &Connection::requestAvatars));
+// mAvatarInterface->setGetKnownAvatarTokensCallback(Tp::memFun(this, &Connection::getKnownAvatarTokens));
+// mAvatarInterface->setRequestAvatarsCallback(Tp::memFun(this, &Connection::requestAvatars));
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAvatarInterface));
 
 /* Connection.Interface.Requests */
@@ -84,6 +84,7 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface
 
 /* Set Callbacks for client */
 setConnectCallback(Tp::memFun(this, &Connection::doConnect));
+
 setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
 setRequestHandlesCallback(Tp::memFun(this, &Connection::requestHandles));
 connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
@@ -102,38 +103,49 @@ Connection::~Connection()
 void Connection::doConnect(Tp::DBusError *error)
 {
   qDebug() << Q_FUNC_INFO << mAccountID;
-  mConfigurationManagerInterface.call("sendRegister",mAccountID,true);
-  //TODO SET presences
-
+  setStatus(Tp::ConnectionStatusConnecting, Tp::ConnectionStatusReasonRequested);
+   mConfigurationManagerInterface.call("sendAccountActive",mAccountID,true);
+   mContactListInterface->setContactListState(Tp::ContactListStateWaiting);
 }
 
 void Connection::onRegistrationStateChanged(QString accountID, QString state)
 {
   qDebug() << Q_FUNC_INFO << accountID << state ;
-  if (accountID == mAccountID && state == "REGISTERED"){
-    setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
-    Tp::SimpleContactPresences presences;
-    mSelfPresence.type = Tp::ConnectionPresenceTypeAvailable;
-    mSelfPresence.status = QLatin1String("available");
-    presences[selfHandle()] = mSelfPresence;
-    mSimplePresenceInterface->setPresences(presences);
-  }
-  if  (accountID == mAccountID && state == "TRYING"){
-   setStatus(Tp::ConnectionStatusConnecting, Tp::ConnectionStatusReasonRequested);
-  }
+  if(accountID == mAccountID && state == "REGISTERED")
+    {
+    onConnected();
+    }
+  if(accountID == mAccountID && state == "TRYING")
+    {
+    qDebug() << "TRYING" ;
+    }
+  if(accountID == mAccountID && state == "UNREGISTERED")
+    {
+   emit disconnected();
+    }
 }
 
+void Connection::onConnected()
+{
+  setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
+  mSelfPresence.type = Tp::ConnectionPresenceTypeAvailable;
+  mSelfPresence.status = QLatin1String("available");
+  Tp::SimpleContactPresences presences;
+  presences[selfHandle()] = mSelfPresence;
+  mSimplePresenceInterface->setPresences(presences);
+}
 void Connection::doDisconnect()
 {
   qDebug() << Q_FUNC_INFO << mAccountID;
   mConfigurationManagerInterface.call("setAccountActive",mAccountID,false);
+  mConfigurationManagerInterface.call("sendRegister",mAccountID,false);
   setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
 }
 
 uint Connection::setPresence(const QString &status, const QString &message, Tp::DBusError *error)
 {
   qDebug() << Q_FUNC_INFO << status << message << error;
-  // TODO
+ // TODO
   return selfHandle();
 }
 

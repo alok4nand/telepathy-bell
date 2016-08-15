@@ -17,6 +17,7 @@ public:
    ~Connection();
 
 private:
+void onConnected();
 uint setPresence(const QString &status, const QString &message, Tp::DBusError *error);
 QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
 Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error);
