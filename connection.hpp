@@ -46,6 +46,8 @@ QDBusInterface mInstanceInterface;
 Tp::SimplePresence mSelfPresence;
 QMap<uint,QString> mHandles;
 QMap<QString, uint> mIdentifiers;
+bool isConnected;
+long nextHandleId;
 };
 
 }

@@ -10,14 +10,12 @@ Connection::Connection(const QDBusConnection&dbusConnection, const QString &cmNa
 : Tp::BaseConnection(dbusConnection, cmName, protocolName, parameters),
 mConfigurationManagerInterface("cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager"),
 mCallManagerInterface("cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager"),
-mInstanceInterface("cx.ring.Ring","/cx/ring/Ring/Instance","cx.ring.Ring.Instance")
+mInstanceInterface("cx.ring.Ring","/cx/ring/Ring/Instance","cx.ring.Ring.Instance"),
+isConnected(false),
+nextHandleId(1)
 {
 qDebug() << Q_FUNC_INFO;
-// for(QVariantMap::const_iterator iter = parameters.begin(); iter != parameters.end(); ++iter) {
-//      qDebug() << iter.key() << iter.value();
-//     }
-mAccountID = parameters[QLatin1String("AccountID")].toString();
-/* Connection Interface Setup */
+/* Connection Interfaces Setup */
 /* Connection.Interface.Contacts */
 mContactsInterface = Tp::BaseConnectionContactsInterface::create();
 mContactsInterface->setGetContactAttributesCallback(Tp::memFun(this, &Connection::getContactAttributes));
@@ -82,9 +80,17 @@ call.allowedProperties.append(TP_QT_IFACE_CHANNEL_TYPE_CALL+".HardwareStreaming"
 mRequestsInterface->requestableChannelClasses << text << call;
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface));
 
+// for(QVariantMap::const_iterator iter = parameters.begin(); iter != parameters.end(); ++iter) {
+//      qDebug() << iter.key() << iter.value();
+//     }
+mAccountID = parameters[QLatin1String("AccountID")].toString();
+QString mRingID = parameters[QLatin1String("RingID")].toString();
+/* Setting self contact */
+uint _self = ensureHandle(mRingID);
+setSelfContact(_self, mRingID);
+
 /* Set Callbacks for client */
 setConnectCallback(Tp::memFun(this, &Connection::doConnect));
-
 setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
 setRequestHandlesCallback(Tp::memFun(this, &Connection::requestHandles));
 connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
@@ -167,7 +173,12 @@ uint Connection::setPresence(const QString &status, const QString &message, Tp::
 uint Connection::ensureHandle(const QString &identifier)
 {
   qDebug() << Q_FUNC_INFO;
-
+  if(!mIdentifiers.contains(identifier)) {
+    long id = nextHandleId++;
+    mHandles[id] = identifier;
+    mIdentifiers[identifier] = id;
+    }
+  return mIdentifiers[identifier];
 }
 
 Tp::UIntList Connection::requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error)
