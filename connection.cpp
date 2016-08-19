@@ -88,10 +88,6 @@ setConnectCallback(Tp::memFun(this, &Connection::doConnect));
 setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
 setRequestHandlesCallback(Tp::memFun(this, &Connection::requestHandles));
 connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
-
-mConfigurationManagerInterface.connection().connect(
-  "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
-  "registrationStateChanged",this,SLOT(onRegistrationStateChanged(QString, QString)));
 }
 
 Connection::~Connection()
@@ -100,12 +96,31 @@ Connection::~Connection()
 
 }
 
+void Connection::sendRegister(bool enable)
+{
+  qDebug() << Q_FUNC_INFO << enable ;
+  mConfigurationManagerInterface.call("sendRegister",mAccountID,enable);
+}
+
+void Connection::setAccountActive(bool enable)
+{
+  qDebug() << Q_FUNC_INFO << enable ;
+  mConfigurationManagerInterface.call("setAccountActive",mAccountID,enable);
+}
+
 void Connection::doConnect(Tp::DBusError *error)
 {
   qDebug() << Q_FUNC_INFO << mAccountID;
   setStatus(Tp::ConnectionStatusConnecting, Tp::ConnectionStatusReasonRequested);
-   mConfigurationManagerInterface.call("sendAccountActive",mAccountID,true);
-   mContactListInterface->setContactListState(Tp::ContactListStateWaiting);
+  sendRegister(true);
+  mContactListInterface->setContactListState(Tp::ContactListStateWaiting);
+
+  mConfigurationManagerInterface.connection().connect(
+    "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
+    "registrationStateChanged",this,SLOT(onRegistrationStateChanged(QString, QString)));
+  mConfigurationManagerInterface.connection().connect(
+    "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
+    "volatileAccountDetailsChanged",this,SLOT(onVolatileAccountDetailsChanged(QString, MapStringString)));
 }
 
 void Connection::onRegistrationStateChanged(QString accountID, QString state)
@@ -130,17 +145,17 @@ void Connection::onConnected()
   setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
   mSelfPresence.type = Tp::ConnectionPresenceTypeAvailable;
   mSelfPresence.status = QLatin1String("available");
-  Tp::SimpleContactPresences presences;
-  presences[selfHandle()] = mSelfPresence;
-  mSimplePresenceInterface->setPresences(presences);
-}
-void Connection::doDisconnect()
-{
-  qDebug() << Q_FUNC_INFO << mAccountID;
-  mConfigurationManagerInterface.call("setAccountActive",mAccountID,false);
-  mConfigurationManagerInterface.call("sendRegister",mAccountID,false);
-  setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
-}
+//   Tp::SimpleContactPresences presences;
+//   presences[selfHandle()] = mSelfPresence;
+//   mSimplePresenceInterface->setPresences(presences);
+ }
+
+ void Connection::doDisconnect()
+ {
+   qDebug() << Q_FUNC_INFO << mAccountID;
+   sendRegister(false);
+   setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
+ }
 
 uint Connection::setPresence(const QString &status, const QString &message, Tp::DBusError *error)
 {

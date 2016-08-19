@@ -24,6 +24,9 @@ Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp:
 Tp::ContactAttributesMap getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error);
 uint ensureHandle(const QString& identifier);
 
+void sendRegister(bool enable);
+void setAccountActive(bool enable);
+
 private slots:
 void doConnect(Tp::DBusError *error);
 void onRegistrationStateChanged(QString accountID, QString state);
