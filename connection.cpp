@@ -23,6 +23,8 @@ mContactsInterface->setContactAttributeInterfaces(QStringList()
                                                 << TP_QT_IFACE_CONNECTION
                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE
+                                                << TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING
+                                                // << TP_QT_IFACE_CONNECTION_INTERFACE_AVATARS
                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_REQUESTS
                                                 );
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mContactsInterface));
@@ -84,6 +86,7 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface
 //      qDebug() << iter.key() << iter.value();
 //     }
 mAccountID = parameters[QLatin1String("AccountID")].toString();
+mAlias = parameters[QLatin1String("Username")].toString();
 QString mRingID = parameters[QLatin1String("RingID")].toString();
 /* Setting self contact */
 uint _self = ensureHandle(mRingID);
@@ -219,6 +222,17 @@ QStringList Connection::inspectHandles(uint handleType, const Tp::UIntList &hand
    return result;
 }
 
+QString Connection::getAlias(uint handle, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO;
+  Q_UNUSED(error);
+
+  if (handle == selfHandle()) {
+      return mAlias;
+  }
+  return QString();
+}
+
 Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error)
 {
     qDebug() << Q_FUNC_INFO << handles << ifaces;
@@ -230,6 +244,9 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
             attributes[TP_QT_IFACE_CONNECTION+"/contact-id"] = inspectedHandles.at(0);
         } else {
             continue;
+        }
+        if (ifaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING)) {
+            attributes[TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING + QLatin1String("/alias")] = QVariant::fromValue(getAlias(handle, error));
         }
         if (ifaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE)) {
             attributes[TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE+"/presence"] = QVariant::fromValue(mSelfPresence);
