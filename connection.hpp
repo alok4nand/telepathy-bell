@@ -5,6 +5,9 @@
 #include <TelepathyQt/BaseChannel>
 #include <QtDBus/QtDBus>
 #include <QMap>
+
+#include "parameters.hpp"
+
 /*This models a connection to a single user account.*/
 
 namespace Bell {
@@ -31,6 +34,9 @@ void setAccountActive(bool enable);
 private slots:
 void doConnect(Tp::DBusError *error);
 void onRegistrationStateChanged(QString accountID, QString state);
+void onVolatileAccountDetailsChanged(QString accountID, MapStringString volatileAccountDetails);
+void onIncomingMessage(QString one, QString two , MapStringString map);
+void onIncomingCall(QString accountID, QString callID, QString contact);
 void doDisconnect();
 
 private:

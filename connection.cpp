@@ -124,12 +124,19 @@ void Connection::doConnect(Tp::DBusError *error)
   sendRegister(true);
   mContactListInterface->setContactListState(Tp::ContactListStateWaiting);
 
+  qDBusRegisterMetaType<MapStringString>();
   mConfigurationManagerInterface.connection().connect(
     "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
     "registrationStateChanged",this,SLOT(onRegistrationStateChanged(QString, QString)));
   mConfigurationManagerInterface.connection().connect(
     "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
     "volatileAccountDetailsChanged",this,SLOT(onVolatileAccountDetailsChanged(QString, MapStringString)));
+ mCallManagerInterface.connection().connect(
+    "cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager",
+    "incomingMessage",this,SLOT(onIncomingMessage(QString, QString, MapStringString)));
+  mCallManagerInterface.connection().connect(
+    "cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager",
+    "incomingCall",this,SLOT(onIncomingCall(QString, QString, QString )));
 }
 
 void Connection::onRegistrationStateChanged(QString accountID, QString state)
@@ -149,6 +156,16 @@ void Connection::onRegistrationStateChanged(QString accountID, QString state)
     }
 }
 
+void Connection::onVolatileAccountDetailsChanged(QString accountID, MapStringString volatileAccountDetails)
+{
+  qDebug() << Q_FUNC_INFO << accountID ;
+  QMap<QString,QString>::iterator iter;
+  for(iter = volatileAccountDetails.begin(); iter != volatileAccountDetails.end(); ++iter)
+  {
+        qDebug() << iter.key() << iter.value();
+  }
+}
+
 void Connection::onConnected()
 {
   setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
@@ -166,10 +183,26 @@ void Connection::onConnected()
    setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
  }
 
+void Connection::onIncomingMessage(QString one, QString two, MapStringString map)
+{
+  qDebug() << Q_FUNC_INFO << one << two ;
+
+
+}
+
+void Connection::onIncomingCall(QString accountID, QString callID, QString contact)
+{
+  qDebug() << Q_FUNC_INFO << accountID << callID << contact ;
+
+}
+
 uint Connection::setPresence(const QString &status, const QString &message, Tp::DBusError *error)
 {
   qDebug() << Q_FUNC_INFO << status << message << error;
- // TODO
+  /* Presence features are not implemented in Ring.
+  All the other presences other than "Offline" shall keep the account
+  in registered mode"
+  */
   return selfHandle();
 }
 
