@@ -15,7 +15,7 @@ class RingCallChannel: public QObject
 {
   Q_OBJECT
 public:
-  RingCallChannel(bool incoming, Connection* connection, QString peer, uint targetHandle);
+  RingCallChannel(bool incoming, Connection* connection, QString peer, uint targetHandle, QString callID);
   Tp::BaseChannelPtr baseChannel();
 
   void onAccept(Tp::DBusError*);
@@ -37,6 +37,7 @@ private:
   Connection* mConnection;
   QString mPeer;
   uint mTargetHandle;
+  QString mCallID;
   Tp::BaseChannelPtr mBaseChannel;
   Tp::BaseChannelCallTypePtr mCallChannel;
   Tp::BaseChannelHoldInterfacePtr mHoldIface;

@@ -4,11 +4,12 @@
 
 using namespace Bell;
 
-RingCallChannel::RingCallChannel(bool incoming, Connection* connection, QString peer, uint targetHandle)
+RingCallChannel::RingCallChannel(bool incoming, Connection* connection, QString peer, uint targetHandle, QString callID)
 : mIncoming(incoming),
   mConnection(connection),
   mPeer(peer),
-  mTargetHandle(targetHandle)
+  mTargetHandle(targetHandle),
+  mCallID(callID)
 {
   mBaseChannel = Tp::BaseChannel::create(mConnection, TP_QT_IFACE_CHANNEL_TYPE_CALL, Tp::HandleTypeContact, targetHandle);
   mBaseChannel->setTargetID(peer);
@@ -43,11 +44,15 @@ Tp::BaseChannelPtr RingCallChannel::baseChannel()
 void RingCallChannel::onAccept(Tp::DBusError*)
 {
   qDebug() << Q_FUNC_INFO;
+  mConnection->mCallManagerInterface.call("accept",mCallID);
 }
 
 void RingCallChannel::onHangup(uint reason, const QString &detailedReason, const QString &message, Tp::DBusError* error)
 {
   qDebug() << Q_FUNC_INFO;
+  reason = 2;
+  mConnection->mCallManagerInterface.call("hangup",mCallID);
+
 }
 
 void RingCallChannel::onAnswerComplete(bool success)
