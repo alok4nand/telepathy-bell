@@ -3,7 +3,7 @@
 #include "connection.hpp"
 #include "common.hpp"
 #include "protocol.hpp"
-
+#include "ringcallchannel.hpp"
 using namespace Bell;
 
 Connection::Connection(const QDBusConnection&dbusConnection, const QString &cmName, const QString &protocolName, const QVariantMap &parameters)
@@ -95,6 +95,7 @@ setSelfContact(_self, mRingID);
 /* Set Callbacks for client */
 setConnectCallback(Tp::memFun(this, &Connection::doConnect));
 setInspectHandlesCallback(Tp::memFun(this, &Connection::inspectHandles));
+setCreateChannelCallback(Tp::memFun(this, &Connection::createChannel));
 setRequestHandlesCallback(Tp::memFun(this, &Connection::requestHandles));
 connect(this, SIGNAL(disconnected()), SLOT(doDisconnect()));
 }
@@ -169,6 +170,7 @@ void Connection::onVolatileAccountDetailsChanged(QString accountID, MapStringStr
 void Connection::onConnected()
 {
   setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
+  isConnected = true;
   mSelfPresence.type = Tp::ConnectionPresenceTypeAvailable;
   mSelfPresence.status = QLatin1String("available");
 //   Tp::SimpleContactPresences presences;
@@ -193,6 +195,34 @@ void Connection::onIncomingMessage(QString one, QString two, MapStringString map
 void Connection::onIncomingCall(QString accountID, QString callID, QString contact)
 {
   qDebug() << Q_FUNC_INFO << accountID << callID << contact ;
+  QString contactAlias;
+  QString contactID;
+  QStringList  contactDetails = contact.split(" <");
+  if(!contactDetails.isEmpty())
+  {
+  contactAlias = contactDetails.first();
+  contactID = (contactDetails.last()).remove('>');
+  }
+  uint handle = ensureHandle(contactID);
+  // TODO setAlias to add the contact here.
+  uint initiatorHandle = handle;
+  QVariantMap request;
+  // request[TP_QT_IFACE_CHANNEL + QLatin1String(".Requested")] = false;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")] = TP_QT_IFACE_CHANNEL_TYPE_CALL;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")] = Tp::HandleTypeContact;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle")] = handle;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")] = initiatorHandle;
+  request["Call_ID"] = callID;
+
+
+bool yours;
+Tp::DBusError error;
+Tp::BaseChannelPtr channel = ensureChannel(request, yours, false, &error);
+
+if (error.isValid() || channel.isNull()) {
+  qWarning() << "error creating the channel " << error.name() << error.message();
+  return;
+}
 
 }
 
@@ -287,4 +317,76 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
         attributesMap[handle] = attributes;
     }
     return attributesMap;
+}
+
+Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO << "Here";
+  // for(QVariantMap::const_iterator iter = request.begin(); iter != request.end(); ++iter) {
+  //       qDebug() << iter.key() << iter.value();
+  //      }
+  uint targetHandleType = Tp::HandleTypeNone;
+  uint targetHandle = 0;
+  QString targetID;
+
+  bool requested = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".Requested")).toBool();
+  const QString channelType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")).toString();
+  targetHandleType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")).toUInt();
+
+  switch (targetHandleType)
+  {
+  case Tp::HandleTypeContact:
+    if (request.contains(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle")))
+    {
+      targetHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle")).toUInt();
+      targetID = mHandles[targetHandle];
+    }
+    else if (request.contains(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetID")))
+    {
+      targetID = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetID")).toString();
+      targetHandle = ensureHandle(targetID);
+    }
+    break;
+  default:
+    if (error)
+    {
+      error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Unknown Handle type for target"));
+      return Tp::BaseChannelPtr();
+    }
+   break;
+  }
+
+  if (targetHandleType == Tp::HandleTypeNone)
+   {
+     if (error)
+       {
+       error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Target handle type is not present in the request details."));
+       }
+     return Tp::BaseChannelPtr();
+   }
+   if(targetID.isEmpty())
+   {
+     if(error)
+       {
+       error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("Target handle is unknown."));
+       }
+       return Tp::BaseChannelPtr();
+   }
+   uint initiatorHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")).toUInt();
+
+  if (channelType == TP_QT_IFACE_CHANNEL_TYPE_TEXT) {
+      if (targetHandleType == Tp::HandleTypeContact) {
+        qDebug() << "Create a text Channel";
+          //TextChannelPtr textChannel = Create messaging channel.
+          //baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(textChannel));
+      }
+  } else if (channelType == TP_QT_IFACE_CHANNEL_TYPE_CALL ) {
+      qDebug() << "Incoming call Channel";
+      QString callID = request.value("Call_ID").toString();
+      RingCallChannel *channel = new RingCallChannel(true, this, targetID, targetHandle, callID);
+      channel->baseChannel()->setInitiatorHandle(initiatorHandle);
+      return channel->baseChannel();
+      // baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast());
+  }
+
 }

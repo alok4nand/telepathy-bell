@@ -27,6 +27,7 @@ Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp:
 QString getAlias(uint handle, Tp::DBusError *error);
 Tp::ContactAttributesMap getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error);
 uint ensureHandle(const QString& identifier);
+Tp::BaseChannelPtr createChannel(const QVariantMap &request, Tp::DBusError *error);
 
 void sendRegister(bool enable);
 void setAccountActive(bool enable);
@@ -48,14 +49,16 @@ Tp::BaseConnectionContactListInterfacePtr mContactListInterface;
 Tp::BaseConnectionAliasingInterfacePtr mAliasingInterface;
 Tp::BaseConnectionAvatarsInterfacePtr mAvatarInterface;
 Tp::BaseConnectionRequestsInterfacePtr mRequestsInterface;
-QDBusInterface mConfigurationManagerInterface;
-QDBusInterface mCallManagerInterface;
-QDBusInterface mInstanceInterface;
 Tp::SimplePresence mSelfPresence;
 QMap<uint,QString> mHandles;
 QMap<QString, uint> mIdentifiers;
 bool isConnected;
 long nextHandleId;
+
+public:
+QDBusInterface mConfigurationManagerInterface;
+QDBusInterface mCallManagerInterface;
+QDBusInterface mInstanceInterface;
 };
 
 }
