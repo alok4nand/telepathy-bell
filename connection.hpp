@@ -36,7 +36,7 @@ private slots:
 void doConnect(Tp::DBusError *error);
 void onRegistrationStateChanged(QString accountID, QString state);
 void onVolatileAccountDetailsChanged(QString accountID, MapStringString volatileAccountDetails);
-void onIncomingMessage(QString one, QString two , MapStringString map);
+void onIncomingAccountMessage(QString one, QString two , MapStringString map);
 void onIncomingCall(QString accountID, QString callID, QString contact);
 void doDisconnect();
 

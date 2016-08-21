@@ -4,6 +4,8 @@
 #include "common.hpp"
 #include "protocol.hpp"
 #include "ringcallchannel.hpp"
+#include "ringmessagechannel.hpp"
+
 using namespace Bell;
 
 Connection::Connection(const QDBusConnection&dbusConnection, const QString &cmName, const QString &protocolName, const QVariantMap &parameters)
@@ -132,9 +134,9 @@ void Connection::doConnect(Tp::DBusError *error)
   mConfigurationManagerInterface.connection().connect(
     "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
     "volatileAccountDetailsChanged",this,SLOT(onVolatileAccountDetailsChanged(QString, MapStringString)));
- mCallManagerInterface.connection().connect(
-    "cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager",
-    "incomingMessage",this,SLOT(onIncomingMessage(QString, QString, MapStringString)));
+  mConfigurationManagerInterface.connection().connect(
+    "cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager",
+    "incomingAccountMessage",this,SLOT(onIncomingAccountMessage(QString, QString, MapStringString)));
   mCallManagerInterface.connection().connect(
     "cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager",
     "incomingCall",this,SLOT(onIncomingCall(QString, QString, QString )));
@@ -185,11 +187,35 @@ void Connection::onConnected()
    setStatus(Tp::ConnectionStatusDisconnected, Tp::ConnectionStatusReasonRequested);
  }
 
-void Connection::onIncomingMessage(QString one, QString two, MapStringString map)
+void Connection::onIncomingAccountMessage(QString accountID, QString from, MapStringString payload)
 {
-  qDebug() << Q_FUNC_INFO << one << two ;
+  qDebug() << Q_FUNC_INFO ;
 
+  uint handle = ensureHandle("ring:" + from);
+  uint initiatorHandle = handle;
+  QVariantMap request;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")] = TP_QT_IFACE_CHANNEL_TYPE_TEXT;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")] = Tp::HandleTypeContact;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandle")] = handle;
+  request[TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")] = initiatorHandle;
 
+  bool yours;
+  Tp::DBusError error;
+  Tp::BaseChannelPtr channel = ensureChannel(request, yours, false, &error);
+
+  if (error.isValid())
+  {
+    qWarning() << "ensureChannel failed:" << error.name() << " " << error.message();
+    return;
+  }
+
+  RingMessageChannelPtr RingMessageChannel = RingMessageChannelPtr::dynamicCast(channel->interface(TP_QT_IFACE_CHANNEL_TYPE_TEXT));
+  if (!RingMessageChannel)
+  {
+    qDebug() << "Error, channel is not a RingMessageChannel?";
+    return;
+  }
+  RingMessageChannel->onMessageReceived (accountID, from, payload);
 }
 
 void Connection::onIncomingCall(QString accountID, QString callID, QString contact)
@@ -214,14 +240,13 @@ void Connection::onIncomingCall(QString accountID, QString callID, QString conta
   request[TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")] = initiatorHandle;
   request["Call_ID"] = callID;
 
+  bool yours;
+  Tp::DBusError error;
+  Tp::BaseChannelPtr channel = ensureChannel(request, yours, false, &error);
 
-bool yours;
-Tp::DBusError error;
-Tp::BaseChannelPtr channel = ensureChannel(request, yours, false, &error);
-
-if (error.isValid() || channel.isNull()) {
+  if (error.isValid() || channel.isNull()) {
   qWarning() << "error creating the channel " << error.name() << error.message();
-  return;
+    return;
 }
 
 }
@@ -319,9 +344,9 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
     return attributesMap;
 }
 
-Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBusError *error)
+  Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBusError *error)
 {
-  qDebug() << Q_FUNC_INFO << "Here";
+  qDebug() << Q_FUNC_INFO ;
   // for(QVariantMap::const_iterator iter = request.begin(); iter != request.end(); ++iter) {
   //       qDebug() << iter.key() << iter.value();
   //      }
@@ -332,6 +357,7 @@ Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBu
   bool requested = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".Requested")).toBool();
   const QString channelType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")).toString();
   targetHandleType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")).toUInt();
+  uint initiatorHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")).toUInt();
 
   switch (targetHandleType)
   {
@@ -372,15 +398,21 @@ Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBu
        }
        return Tp::BaseChannelPtr();
    }
-   uint initiatorHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")).toUInt();
+
+   Tp::BaseChannelPtr baseChannel = Tp::BaseChannel::create(this, channelType, Tp::HandleType(targetHandleType), targetHandle);
+   baseChannel->setTargetID(targetID);
+   baseChannel->setRequested(requested);
 
   if (channelType == TP_QT_IFACE_CHANNEL_TYPE_TEXT) {
-      if (targetHandleType == Tp::HandleTypeContact) {
-        qDebug() << "Create a text Channel";
-          //TextChannelPtr textChannel = Create messaging channel.
-          //baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(textChannel));
+      if (targetHandleType == Tp::HandleTypeContact)
+      {
+        qDebug() << "Incoming Message Channel";
+        RingMessageChannelPtr RingMessageChannel = RingMessageChannel::create(this, baseChannel.data());
+        baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(RingMessageChannel));
       }
-  } else if (channelType == TP_QT_IFACE_CHANNEL_TYPE_CALL ) {
+  }
+  else if (channelType == TP_QT_IFACE_CHANNEL_TYPE_CALL )
+  {
       qDebug() << "Incoming call Channel";
       QString callID = request.value("Call_ID").toString();
       RingCallChannel *channel = new RingCallChannel(true, this, targetID, targetHandle, callID);
@@ -388,5 +420,5 @@ Tp::BaseChannelPtr Connection::createChannel(const QVariantMap &request, Tp::DBu
       return channel->baseChannel();
       // baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast());
   }
-
+  return baseChannel;
 }
