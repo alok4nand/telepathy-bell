@@ -1,0 +1,7 @@
+Source: telepathy-bell
+Build-Depends: cmake, libtelepathy-qt5-dev (>= 0.9.6) 
+Maintainer: Alok Anand <alok4nand@gmail.com>
+
+Package: telepathy-bell
+Architecture: all
+Description: Telepathy client for Ring
