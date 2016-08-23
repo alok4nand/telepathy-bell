@@ -1,3 +1,27 @@
+/*****************************************************************************
+    This models a connection to a single user account.
+    It also provides capability to request and receive 
+    channels for communcication using Text and Calls.
+******************************************************************************
+*  Copyright (C) 2016 Alok Anand
+*
+*  Author: Alok Anand <alok4nand@gmail.com>
+*
+*  Telepathy-bell is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 3 of the License, or
+*  (at your option) any later version.
+*
+*  Telepathy-bell is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with this program; if not, write to the Free Software
+*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+*/
+
 #include <TelepathyQt/Constants>
 
 #include "connection.hpp"
@@ -190,8 +214,8 @@ void Connection::onConnected()
 void Connection::onIncomingAccountMessage(QString accountID, QString from, MapStringString payload)
 {
   qDebug() << Q_FUNC_INFO ;
-
-  uint handle = ensureHandle("ring:" + from);
+  QString fromID = "ring:" + from;
+  uint handle = ensureHandle(fromID);
   uint initiatorHandle = handle;
   QVariantMap request;
   request[TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")] = TP_QT_IFACE_CHANNEL_TYPE_TEXT;
@@ -215,7 +239,7 @@ void Connection::onIncomingAccountMessage(QString accountID, QString from, MapSt
     qDebug() << "Error, channel is not a RingMessageChannel?";
     return;
   }
-  RingMessageChannel->onMessageReceived (accountID, from, payload);
+  RingMessageChannel->onMessageReceived (accountID, fromID, payload);
 }
 
 void Connection::onIncomingCall(QString accountID, QString callID, QString contact)
