@@ -3,9 +3,7 @@
 DISTRIBUTION = $(shell lsb_release -sr)
 VERSION = 1.0.0
 PACKAGEVERSION = $(VERSION)-0~$(DISTRIBUTION)
-TARBALL = master.zip
-#URL = "https://github.com/alok4nand/telepathy-bell.git"
-URL = "https://github.com/alok4nand/telepathy-bell/archive/master.zip"
+URL = "https://github.com/alok4nand/telepathy-bell.git"
 
 %:
 	dh $@
@@ -14,11 +12,11 @@ override_dh_auto_clean:
 override_dh_auto_test:
 override_dh_auto_build:
 override_dh_auto_install:
-	wget $(URL)
-	unzip $(TARBALL)
-	cmake telepathy-bell-master -DCMAKE_INSTALL_PREFIX=/usr
-	make
-	sudo make install
+	git clone $(URL) telepathy-bell
+	cd telepathy-bell && \
+		cmake -DCMAKE_INSTALL_PREFIX=../debian/telepathy-bell/usr && \
+		make && make install && \
+    cd ../
 
 override_dh_gencontrol:
 	dh_gencontrol -- -v$(PACKAGEVERSION)

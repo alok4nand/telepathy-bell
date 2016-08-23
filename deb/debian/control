@@ -1,5 +1,5 @@
 Source: telepathy-bell
-Build-Depends: cmake, libtelepathy-qt5-dev (>= 0.9.6) 
+Build-Depends: git, cmake, libtelepathy-qt5-dev (>= 0.9.6)
 Maintainer: Alok Anand <alok4nand@gmail.com>
 
 Package: telepathy-bell
