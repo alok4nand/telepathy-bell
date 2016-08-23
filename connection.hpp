@@ -47,6 +47,9 @@ uint setPresence(const QString &status, const QString &message, Tp::DBusError *e
 QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
 Tp::UIntList requestHandles(uint handleType, const QStringList &identifiers, Tp::DBusError *error);
 QString getAlias(uint handle, Tp::DBusError *error);
+uint setAlias(const QString &alias, const QString &identifier);
+Tp::AliasMap getAliases(const Tp::UIntList &handles, Tp::DBusError *error);
+void setAliases(const Tp::AliasMap &aliases, Tp::DBusError *error);
 Tp::ContactAttributesMap getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error);
 uint ensureHandle(const QString& identifier);
 Tp::BaseChannelPtr createChannel(const QVariantMap &request, Tp::DBusError *error);
@@ -72,8 +75,11 @@ Tp::BaseConnectionAliasingInterfacePtr mAliasingInterface;
 Tp::BaseConnectionAvatarsInterfacePtr mAvatarInterface;
 Tp::BaseConnectionRequestsInterfacePtr mRequestsInterface;
 Tp::SimplePresence mSelfPresence;
+
 QMap<uint,QString> mHandles;
 QMap<QString, uint> mIdentifiers;
+Tp::AliasMap mAliases;
+
 bool isConnected;
 long nextHandleId;
 

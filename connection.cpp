@@ -1,6 +1,6 @@
 /*****************************************************************************
     This models a connection to a single user account.
-    It also provides capability to request and receive 
+    It also provides capability to request and receive
     channels for communcication using Text and Calls.
 ******************************************************************************
 *  Copyright (C) 2016 Alok Anand
@@ -34,11 +34,11 @@ using namespace Bell;
 
 Connection::Connection(const QDBusConnection&dbusConnection, const QString &cmName, const QString &protocolName, const QVariantMap &parameters)
 : Tp::BaseConnection(dbusConnection, cmName, protocolName, parameters),
+isConnected(false),
+nextHandleId(1),
 mConfigurationManagerInterface("cx.ring.Ring","/cx/ring/Ring/ConfigurationManager","cx.ring.Ring.ConfigurationManager"),
 mCallManagerInterface("cx.ring.Ring","/cx/ring/Ring/CallManager","cx.ring.Ring.CallManager"),
-mInstanceInterface("cx.ring.Ring","/cx/ring/Ring/Instance","cx.ring.Ring.Instance"),
-isConnected(false),
-nextHandleId(1)
+mInstanceInterface("cx.ring.Ring","/cx/ring/Ring/Instance","cx.ring.Ring.Instance")
 {
 qDebug() << Q_FUNC_INFO;
 /* Connection Interfaces Setup */
@@ -70,8 +70,8 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mSimplePresenceInt
 
  /* Connection.Interface.Aliasing */
 mAliasingInterface = Tp::BaseConnectionAliasingInterface::create();
-// mAliasingInterface->setGetAliasesCallback(Tp::memFun(this, &Connection::getAliases));
-// mAliasingInterface->setSetAliasesCallback(Tp::memFun(this, &Connection::setAliases));
+mAliasingInterface->setGetAliasesCallback(Tp::memFun(this, &Connection::getAliases));
+mAliasingInterface->setSetAliasesCallback(Tp::memFun(this, &Connection::setAliases));
 plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mAliasingInterface));
 
 /* Connection.Interface.Avatars */
@@ -247,14 +247,19 @@ void Connection::onIncomingCall(QString accountID, QString callID, QString conta
   qDebug() << Q_FUNC_INFO << accountID << callID << contact ;
   QString contactAlias;
   QString contactID;
+  QString contactRingID;
   QStringList  contactDetails = contact.split(" <");
   if(!contactDetails.isEmpty())
   {
   contactAlias = contactDetails.first();
-  contactID = (contactDetails.last()).remove('>');
+  contactID = contactDetails.last();
+  // ContactID is in form "ring:ID" + @ring.dht.
+  QStringList idList = contactID.split('@');
+  contactRingID = "ring:" + idList.first();
   }
-  uint handle = ensureHandle(contactID);
-  // TODO setAlias to add the contact here.
+  // setAlias will also call ensureHandle();
+  uint handle = setAlias(contactAlias, contactRingID);
+  qDebug() << handle;
   uint initiatorHandle = handle;
   QVariantMap request;
   // request[TP_QT_IFACE_CHANNEL + QLatin1String(".Requested")] = false;
@@ -334,15 +339,52 @@ QStringList Connection::inspectHandles(uint handleType, const Tp::UIntList &hand
    return result;
 }
 
-QString Connection::getAlias(uint handle, Tp::DBusError *error)
+uint Connection::setAlias(const QString &alias, const QString &identifier)
 {
   qDebug() << Q_FUNC_INFO;
+  uint id ;
+  if(mIdentifiers.contains(identifier))
+  {
+    id = mIdentifiers[identifier];
+    mAliases[id] = alias;
+  }
+  else{
+    ensureHandle(identifier);
+    id = mIdentifiers[identifier];
+    mAliases[id] = alias;
+  }
+  return id;
+}
+
+QString Connection::getAlias(uint handle, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO << handle;
   Q_UNUSED(error);
 
   if (handle == selfHandle()) {
       return mAlias;
   }
-  return QString();
+  QString alias = mAliases[handle];
+  return alias;
+}
+
+Tp::AliasMap Connection::getAliases(const Tp::UIntList &handles, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO;
+  for(uint handle : handles)
+  {
+    mAliases[handle] = getAlias(handle, error);
+  }
+  return mAliases;
+}
+
+void Connection::setAliases(const Tp::AliasMap &aliases, Tp::DBusError *error)
+{
+  qDebug() << Q_FUNC_INFO;
+  //TODO
+  // Since the daemon does handle contacts setting alias for all contacts
+  // for an account at once is not implemented.
+  error->set(TP_QT_ERROR_NOT_IMPLEMENTED, QLatin1String("Not implemented"));
 }
 
 Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &handles, const QStringList &ifaces, Tp::DBusError *error)
