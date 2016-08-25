@@ -27,18 +27,16 @@ using namespace Bell;
 RingMessageChannel::RingMessageChannel(Connection *connection, Tp::BaseChannel *baseChannel)
   :Tp::BaseChannelTextType(baseChannel),
    mConnection(connection),
-   mTargetHandle(baseChannel->targetHandle())
+   mTargetHandle(baseChannel->targetHandle()),
+   mTargetID(baseChannel->targetID())
 {
   qDebug() << Q_FUNC_INFO;
   QStringList supportedContentTypes = QStringList() << QLatin1String("text/plain");
-  Tp::UIntList messageTypes = Tp::UIntList() << Tp::ChannelTextMessageTypeNormal
-                                               << Tp::ChannelTextMessageTypeDeliveryReport;
+  Tp::UIntList messageTypes = Tp::UIntList() << Tp::ChannelTextMessageTypeNormal;
 
-  uint messagePartSupportFlags = Tp::MessageSendingFlagReportDelivery | Tp::MessageSendingFlagReportRead;
-  uint deliveryReportingSupport = Tp::DeliveryReportingSupportFlagReceiveSuccesses | Tp::DeliveryReportingSupportFlagReceiveRead;
-
+  uint messagePartSupportFlags = 0;
+  uint deliveryReportingSupport = 0;
   setMessageAcknowledgedCallback(Tp::memFun(this, &RingMessageChannel::messageAcknowledged));
-
   mMessagesInterface = Tp::BaseChannelMessagesInterface::create(this,
                                                                supportedContentTypes,
                                                                messageTypes,
@@ -62,24 +60,58 @@ RingMessageChannelPtr RingMessageChannel::create(Connection *connection, Tp::Bas
 QString RingMessageChannel::sendMessage(const Tp::MessagePartList &messageParts, uint flags, Tp::DBusError *error)
 {
   qDebug() << Q_FUNC_INFO;
-  return QString();
+  QString content;
+  QString messageID;
+  for(auto &part : messageParts)
+  {
+  if(part.count(QLatin1String("content-type")) &&
+     part.value(QLatin1String("content-type")).variant().toString() == QLatin1String("text/plain") &&
+     part.count(QLatin1String("content")))
+    {
+    content = part.value(QLatin1String("content")).variant().toString();
+    break;
+    }
+  }
+  qulonglong id = sendRingAccountMessage(content);
+  qDebug() << "Sent Message ID:" << id ;
+  return messageID.number(id);
 }
 
 void RingMessageChannel::onMessageReceived(QString accountID, QString from, MapStringString payload)
 {
-  qDebug() << Q_FUNC_INFO << accountID << from;
+  qDebug() << Q_FUNC_INFO ;
+  processReceivedMessage(payload, mTargetHandle, mTargetID);
+}
+
+void RingMessageChannel::processReceivedMessage(MapStringString payload, uint senderHandle, const QString &senderID)
+{
+  qDebug() << Q_FUNC_INFO << "Sender Handle:" << senderHandle << "Sender RingID:" << senderID;
   QMap<QString,QString>::iterator iter;
   for(iter = payload.begin(); iter != payload.end(); ++iter)
   {
     qDebug() << iter.key() << iter.value();
   }
-  // processReceivedMessage(payload, mTargetHandle, from);
+
 }
 
-void RingMessageChannel::processReceivedMessage(MapStringString payload, uint senderHandle, const QString &senderID)
+qulonglong RingMessageChannel::sendRingAccountMessage(const QString &content)
 {
-  qDebug() << Q_FUNC_INFO;
+  qDebug() << Q_FUNC_INFO << content ;
+  QString accountID = mConnection->getAccountID();
+  QString to = mTargetID;
+  MapStringString payload;
+  payload["text/plain"] = content;
 
+  QList<QVariant> argumentList;
+  argumentList << accountID << to << QVariant::fromValue(payload);
+
+  QDBusPendingCall mPendingCallReply = mConnection->mConfigurationManagerInterface.asyncCallWithArgumentList("sendTextMessage",argumentList);
+  QDBusPendingReply<qulonglong> mPendingReply(mPendingCallReply);
+  if(mPendingReply.isError())
+  {
+  qDebug() << "Error sending account text message";
+  }
+  return mPendingReply;
 }
 
 void RingMessageChannel::setChatState(uint state, Tp::DBusError *error)

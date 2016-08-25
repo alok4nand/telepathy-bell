@@ -47,6 +47,8 @@ namespace Bell {
       void setChatState(uint state, Tp::DBusError *error);
       void messageAcknowledged(const QString &messageId);
       void processReceivedMessage(MapStringString payload, uint senderHandle, const QString &senderID);
+      qulonglong sendRingAccountMessage(const QString &content);
+
 
   protected:
       Tp::BaseChannelMessagesInterfacePtr mMessagesInterface;
@@ -54,6 +56,7 @@ namespace Bell {
 
       Connection *mConnection;
       uint mTargetHandle;
+      QString mTargetID;
   };
 }
 
