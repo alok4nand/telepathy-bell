@@ -113,7 +113,7 @@ plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(mRequestsInterface
 //     }
 mAccountID = parameters[QLatin1String("AccountID")].toString();
 mAlias = parameters[QLatin1String("Username")].toString();
-QString mRingID = parameters[QLatin1String("RingID")].toString();
+mRingID = parameters[QLatin1String("RingID")].toString();
 /* Setting self contact */
 uint _self = ensureHandle(mRingID);
 setSelfContact(_self, mRingID);
@@ -418,12 +418,13 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
   //      }
   uint targetHandleType = Tp::HandleTypeNone;
   uint targetHandle = 0;
+  uint initiatorHandle= 0;
   QString targetID;
+  QString initiatorID;
 
   bool requested = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".Requested")).toBool();
   const QString channelType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".ChannelType")).toString();
   targetHandleType = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".TargetHandleType")).toUInt();
-  uint initiatorHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")).toUInt();
 
   switch (targetHandleType)
   {
@@ -442,12 +443,12 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
   default:
     if (error)
     {
-      error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Unknown Handle type for target"));
+      error->set(TP_QT_ERROR_INVALID_ARGUMENT, QLatin1String("Unknown Target Handle type for target"));
       return Tp::BaseChannelPtr();
     }
    break;
   }
-
+  // Check the Target Handle and Target ID values and set error accordingly.
   if (targetHandleType == Tp::HandleTypeNone)
    {
      if (error)
@@ -460,26 +461,43 @@ Tp::ContactAttributesMap Connection::getContactAttributes(const Tp::UIntList &ha
    {
      if(error)
        {
-       error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("Target handle is unknown."));
+       error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("Target ID is unknown."));
        }
        return Tp::BaseChannelPtr();
    }
 
+   // Look for initiator in the request if none found set initiator as self.
+   if (request.contains(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")))
+   {
+     initiatorHandle = request.value(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorHandle")).toUInt();
+     initiatorID = mHandles[initiatorHandle];
+   }
+   else if(request.contains(TP_QT_IFACE_CHANNEL + QLatin1String(".InitiatorID")))
+   {
+     initiatorID = request.value(TP_QT_IFACE_CHANNEL + QLatin1String("InitiatorID")).toString();
+     initiatorHandle = ensureHandle(initiatorID);
+   }
+   else
+   {
+     initiatorHandle = selfHandle();
+     initiatorID = mRingID;
+   }
+
    Tp::BaseChannelPtr baseChannel = Tp::BaseChannel::create(this, channelType, Tp::HandleType(targetHandleType), targetHandle);
-   baseChannel->setTargetID(targetID);
    baseChannel->setRequested(requested);
+   baseChannel->setTargetID(targetID);
 
   if (channelType == TP_QT_IFACE_CHANNEL_TYPE_TEXT) {
       if (targetHandleType == Tp::HandleTypeContact)
       {
-        qDebug() << "Incoming Message Channel";
-        RingMessageChannelPtr RingMessageChannel = RingMessageChannel::create(this, baseChannel.data());
+        qDebug() << "Telepathy Bell : Message Channel";
+        RingMessageChannelPtr RingMessageChannel = RingMessageChannel::create(this, baseChannel.data(), selfHandle(), mRingID);
         baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(RingMessageChannel));
       }
   }
   else if (channelType == TP_QT_IFACE_CHANNEL_TYPE_CALL )
   {
-      qDebug() << "Incoming call Channel";
+      qDebug() << "Telepathy Bell : Call Channel";
       QString callID = request.value("Call_ID").toString();
       RingCallChannel *channel = new RingCallChannel(true, this, targetID, targetHandle, callID);
       channel->baseChannel()->setInitiatorHandle(initiatorHandle);

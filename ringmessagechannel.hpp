@@ -36,13 +36,13 @@ namespace Bell {
   {
       Q_OBJECT
   public:
-      static RingMessageChannelPtr create(Connection *connection, Tp::BaseChannel *baseChannel);
+      static RingMessageChannelPtr create(Connection *connection, Tp::BaseChannel *baseChannel, uint selfHandle, QString selfID);
 
   public slots:
       virtual void onMessageReceived(QString accountID, QString from, MapStringString payload);
 
   protected:
-      RingMessageChannel(Connection *connection, Tp::BaseChannel *baseChannel);
+      RingMessageChannel(Connection *connection, Tp::BaseChannel *baseChannel, uint selfHandle, QString selfID);
       QString sendMessage(const Tp::MessagePartList &messageParts, uint flags, Tp::DBusError *error);
       void setChatState(uint state, Tp::DBusError *error);
       void messageAcknowledged(const QString &messageId);
@@ -55,7 +55,11 @@ namespace Bell {
       Tp::BaseChannelChatStateInterfacePtr mChatStateInterface;
 
       Connection *mConnection;
+      uint mSelfHandle;
+      uint mInitiatorHandle;
       uint mTargetHandle;
+      QString mSelfID;
+      QString mInitiatorID;
       QString mTargetID;
   };
 }

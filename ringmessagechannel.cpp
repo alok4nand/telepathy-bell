@@ -24,10 +24,14 @@
 
 using namespace Bell;
 
-RingMessageChannel::RingMessageChannel(Connection *connection, Tp::BaseChannel *baseChannel)
+RingMessageChannel::RingMessageChannel(Connection *connection, Tp::BaseChannel *baseChannel, uint selfHandle, QString selfID)
   :Tp::BaseChannelTextType(baseChannel),
    mConnection(connection),
+   mSelfHandle(selfHandle),
+   mInitiatorHandle(baseChannel->initiatorHandle()),
    mTargetHandle(baseChannel->targetHandle()),
+   mSelfID(selfID),
+   mInitiatorID(baseChannel->initiatorID()),
    mTargetID(baseChannel->targetID())
 {
   qDebug() << Q_FUNC_INFO;
@@ -52,9 +56,9 @@ RingMessageChannel::RingMessageChannel(Connection *connection, Tp::BaseChannel *
 }
 
 
-RingMessageChannelPtr RingMessageChannel::create(Connection *connection, Tp::BaseChannel *baseChannel)
+RingMessageChannelPtr RingMessageChannel::create(Connection *connection, Tp::BaseChannel *baseChannel, uint selfHandle, QString selfID)
 {
-  return RingMessageChannelPtr(new RingMessageChannel(connection, baseChannel));
+  return RingMessageChannelPtr(new RingMessageChannel(connection, baseChannel, selfHandle, selfID));
 }
 
 QString RingMessageChannel::sendMessage(const Tp::MessagePartList &messageParts, uint flags, Tp::DBusError *error)
@@ -91,6 +95,34 @@ void RingMessageChannel::processReceivedMessage(MapStringString payload, uint se
   {
     qDebug() << iter.key() << iter.value();
   }
+  Tp::MessagePartList body;
+  Tp::MessagePart text;
+
+  text[QLatin1String("content-type")] = QDBusVariant(QLatin1String("text/plain"));
+  if (!payload.isEmpty())
+  {
+    text[QLatin1String("content")] = QDBusVariant(payload.value("text/plain"));
+  }
+  else
+  {
+    text[QLatin1String("content")] = QDBusVariant(tr("Unsupported Message type."));
+  }
+
+  body << text;
+
+  Tp::MessagePartList partList;
+  Tp::MessagePart header;
+
+  header[QLatin1String("message-type")]  = QDBusVariant(Tp::ChannelTextMessageTypeNormal);
+  header[QLatin1String("message-sender")]    = QDBusVariant(mTargetHandle);
+  header[QLatin1String("message-sender-id")] = QDBusVariant(mTargetID);
+  uint currentTimestamp = QDateTime::currentMSecsSinceEpoch() / 1000;
+  header[QLatin1String("message-received")]  = QDBusVariant(currentTimestamp);
+  header[QLatin1String("message-sender")]    = QDBusVariant(senderHandle);
+
+
+  partList << header << body;
+  addReceivedMessage(partList);
 
 }
 

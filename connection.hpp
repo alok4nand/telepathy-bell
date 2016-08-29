@@ -68,6 +68,7 @@ void doDisconnect();
 private:
 QString mAccountID;
 QString mAlias;
+QString mRingID;
 Tp::BaseConnectionContactsInterfacePtr mContactsInterface;
 Tp::BaseConnectionSimplePresenceInterfacePtr mSimplePresenceInterface;
 Tp::BaseConnectionContactListInterfacePtr mContactListInterface;
@@ -87,6 +88,7 @@ public:
 QDBusInterface mConfigurationManagerInterface;
 QDBusInterface mCallManagerInterface;
 QDBusInterface mInstanceInterface;
+QString getAccountID() { return mAccountID;};
 };
 
 }
